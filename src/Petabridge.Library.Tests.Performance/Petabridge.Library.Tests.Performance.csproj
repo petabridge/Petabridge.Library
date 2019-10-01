@@ -3,9 +3,9 @@
 
 
   <PropertyGroup>    
-    <TargetFramework>netcoreapp2.1</TargetFramework> <!-- can't use common.props version info here due to dotnet-nbench instrumentation -->
+    <TargetFramework>netcoreapp3.0</TargetFramework> <!-- can't use common.props version info here due to dotnet-nbench instrumentation -->
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <RuntimeFrameworkVersion>2.1.6</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>3.0.0</RuntimeFrameworkVersion>
   </PropertyGroup>
 
   <ItemGroup>
