@@ -31,8 +31,8 @@ Param(
 
 $FakeVersion = "4.61.2"
 $DotNetChannel = "LTS";
-$DotNetVersion = "2.1.500";
-$DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/v$DotNetVersion/scripts/obtain/dotnet-install.ps1";
+$DotNetVersion = "3.0.100";
+$DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
 $NugetVersion = "4.1.0";
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/v$NugetVersion/nuget.exe"
 $ProtobufVersion = "3.4.0"
@@ -87,6 +87,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
     $env:PATH = "$InstallPath;$env:PATH"
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
     $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
+    $env:DOTNET_ROOT=$InstallPath
 }
 
 ###########################################################################
