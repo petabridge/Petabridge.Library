@@ -14,7 +14,7 @@ FAKE_EXE=$TOOLS_DIR/FAKE/tools/FAKE.exe
 DOTNET_VERSION=3.0.100
 DOTNET_INSTALLER_URL=https://dot.net/v1/dotnet-install.sh
 DOTNET_CHANNEL=LTS;
-DOCFX_VERSION=2.40.5
+DOCFX_VERSION=2.49.0
 DOCFX_EXE=$TOOLS_DIR/docfx.console/tools/docfx.exe
 
 # Define default arguments.
