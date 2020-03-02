@@ -273,7 +273,7 @@ Target "Help" <| fun _ ->
       "./build.ps1 [target]"
       ""
       " Targets for building:"
-      " * Build         Builds"
+      " * Build         Builds the project"
       " * Nuget         Create and optionally publish nugets packages"
       " * SignPackages  Signs all NuGet packages, provided that the following arguments are passed into the script: SignClientSecret={secret} and SignClientUser={username}"
       " * RunTests      Runs tests"
