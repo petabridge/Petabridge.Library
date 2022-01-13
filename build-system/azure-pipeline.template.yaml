@@ -20,7 +20,6 @@ jobs:
       - task: UseDotNet@2
         displayName: 'Use .NET 6'
         inputs:
-          packageType: runtime
           version: '6.x'
       # Linux or macOS
       - task: Bash@3 
