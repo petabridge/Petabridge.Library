@@ -1,4 +1,4 @@
-# Petabridge.App.Web
+﻿# Petabridge.Library.Web
 
 Update this readme file with your details.
 
@@ -17,6 +17,27 @@ build.cmd
 You can define your GitHub workflows in code and Nuke will generate the YAML files for you.
 
 You can update or add to what exist in `Build.CI.GitHubActions.cs` (`AutoGenerate` has to be set to true):
+
+```shell
+PS C:\Users\user\source\repos\Petabridge.Library> .\build.cmd compile
+PowerShell Desktop version 5.1.19041.1320
+Microsoft (R) .NET Core SDK version 6.0.101
+11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
+11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
+11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
+11:42:28 [WRN] Configuration files for GitHubActions (Windows_release) have changed.
+11:42:28 [WRN] Configuration files for GitHubActions (pr_validation) have changed.
+11:42:28 [WRN] Configuration files for GitHubActions (Docker_build) have changed.
+Press any key to continue ...
+
+███╗   ██╗██╗   ██╗██╗  ██╗███████╗
+████╗  ██║██║   ██║██║ ██╔╝██╔════╝
+██╔██╗ ██║██║   ██║█████╔╝ █████╗  
+██║╚██╗██║██║   ██║██╔═██╗ ██╔══╝  
+██║ ╚████║╚██████╔╝██║  ██╗███████╗
+╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+​ 
+```
 
 ```csharp
 [CustomGitHubActions("pr_validation",
@@ -158,7 +179,7 @@ If I changed my current branch to:
 `build.cmd nuget` will check if current branch matches the `ReleaseBranch`. If it does, it will check if the `ChangeLog.md` has the `next-version`, if not it fails. Execute the following command to update `RunChangeLog.md` when you are ready to create final release: `build.cmd runchangelog`.
 
 ### Deployment
-Petabridge.App.Web uses Docker for deployment - to create Docker images for this project, please run the following command:
+Petabridge.Library.Web uses Docker for deployment - to create Docker images for this project, please run the following command:
 
 ```
 build.cmd buildImage
