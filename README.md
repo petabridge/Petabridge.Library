@@ -18,27 +18,6 @@ You can define your GitHub workflows in code and Nuke will generate the YAML fil
 
 You can update or add to what exist in `Build.CI.GitHubActions.cs` (`AutoGenerate` has to be set to true):
 
-```shell
-PS C:\Users\user\source\repos\Petabridge.Library> .\build.cmd compile
-PowerShell Desktop version 5.1.19041.1320
-Microsoft (R) .NET Core SDK version 6.0.101
-11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
-11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
-11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
-11:42:28 [WRN] Configuration files for GitHubActions (Windows_release) have changed.
-11:42:28 [WRN] Configuration files for GitHubActions (pr_validation) have changed.
-11:42:28 [WRN] Configuration files for GitHubActions (Docker_build) have changed.
-Press any key to continue ...
-
-███╗   ██╗██╗   ██╗██╗  ██╗███████╗
-████╗  ██║██║   ██║██║ ██╔╝██╔════╝
-██╔██╗ ██║██║   ██║█████╔╝ █████╗  
-██║╚██╗██║██║   ██║██╔═██╗ ██╔══╝  
-██║ ╚████║╚██████╔╝██║  ██╗███████╗
-╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
-​ 
-```
-
 ```csharp
 [CustomGitHubActions("pr_validation",
     GitHubActionsImage.WindowsLatest,
@@ -79,7 +58,28 @@ Press any key to continue ...
 ]
 
 ```
-To generate or update existing workflow yaml file(s), execute any of the commands (e.g. `build.cmd compile`).
+To generate or update existing workflow yaml file(s), execute any of the commands (e.g. `build.cmd compile`):
+
+```shell
+PS C:\Users\user\source\repos\Petabridge.Library> .\build.cmd compile
+PowerShell Desktop version 5.1.19041.1320
+Microsoft (R) .NET Core SDK version 6.0.101
+11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
+11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
+11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
+11:42:28 [WRN] Configuration files for GitHubActions (Windows_release) have changed.
+11:42:28 [WRN] Configuration files for GitHubActions (pr_validation) have changed.
+11:42:28 [WRN] Configuration files for GitHubActions (Docker_build) have changed.
+Press any key to continue ...
+
+███╗   ██╗██╗   ██╗██╗  ██╗███████╗
+████╗  ██║██║   ██║██║ ██╔╝██╔════╝
+██╔██╗ ██║██║   ██║█████╔╝ █████╗  
+██║╚██╗██║██║   ██║██╔═██╗ ██╔══╝  
+██║ ╚████║╚██████╔╝██║  ██╗███████╗
+╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+​ 
+```
 
 ## Supported Build System Commands
 
