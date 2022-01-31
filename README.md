@@ -1,4 +1,4 @@
-﻿# Petabridge.Library.Web
+﻿# Petabridge.Library
 
 Update this readme file with your details.
 
