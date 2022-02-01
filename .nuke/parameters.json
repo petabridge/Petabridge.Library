@@ -1,4 +1,3 @@
 {
-  "$schema": "./build.schema.json",
-  "Solution": "Petabridge.Library.sln"
+  "$schema": "./build.schema.json"
 }

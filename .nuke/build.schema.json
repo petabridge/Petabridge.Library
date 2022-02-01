@@ -72,6 +72,9 @@
           "type": "boolean",
           "description": "Shows the execution plan (HTML)"
         },
+        "Port": {
+          "type": "integer"
+        },
         "Profile": {
           "type": "array",
           "description": "Defines the profiles to load",
@@ -135,10 +138,6 @@
               "Tests"
             ]
           }
-        },
-        "Solution": {
-          "type": "string",
-          "description": "Path to a solution file that is automatically loaded"
         },
         "SymbolsPublishUrl": {
           "type": "string"
