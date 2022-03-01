@@ -23,18 +23,6 @@ using Nuke.Common.Utilities;
     EnableGitHubContext = true)
 ]
 
-[CustomGitHubActions("Docker_build",
-    GitHubActionsImage.UbuntuLatest,
-    AutoGenerate = true,
-    OnPushBranches = new[] { "master", "dev" },
-    OnPullRequestBranches = new[] { "master", "dev" },
-    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
-    InvokedTargets = new[] { nameof(BuildImage) },
-    ImportSecrets = new [] { "Docker_Username", "Docker_Password" },
-    //causes the on push to not trigger - maybe path-ignore is the right approach!
-    //OnPushExcludePaths = new[] { "docs/**/*", "package.json", "README.md" },
-    EnableGitHubContext = true)
-]
 [CustomGitHubActions("Windows_release",
     GitHubActionsImage.WindowsLatest,
     AutoGenerate = true,
