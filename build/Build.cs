@@ -48,7 +48,7 @@ partial class Build : NukeBuild
     [Parameter] string SymbolsPublishUrl;
 
     //usage:
-    //.\build.cmd createnuget --NugetPrerelease
+    //.\build.cmd createnuget --NugetPrerelease {suffix}
     [Parameter] string NugetPrerelease;
 
     // Metadata used when signing packages and DLLs
