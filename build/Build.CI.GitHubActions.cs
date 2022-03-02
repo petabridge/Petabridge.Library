@@ -15,10 +15,7 @@ using Nuke.Common.Utilities;
     AutoGenerate = true,
     OnPushBranches = new[] { "master", "dev" },
     OnPullRequestBranches = new[] { "master", "dev" },
-    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
     InvokedTargets = new[] { nameof(RunTests) },
-    //causes the on push to not trigger - maybe path-ignore is the right approach!
-    //OnPushExcludePaths = new[] { "docs/**/*", "package.json", "README.md" },
     PublishArtifacts = false,
     EnableGitHubContext = true)
 ]
@@ -27,12 +24,10 @@ using Nuke.Common.Utilities;
     GitHubActionsImage.WindowsLatest,
     AutoGenerate = true,
     OnPushBranches = new[] { "refs/tags/*" },
-    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
-    InvokedTargets = new[] { nameof(BuildImage) },
+    InvokedTargets = new[] { nameof(NuGet) },
     ImportSecrets = new[] { "Nuget_Key" },
-    //causes the on push to not trigger - maybe path-ignore is the right approach!
-    //OnPushExcludePaths = new[] { "docs/**/*", "package.json", "README.md" },
-    EnableGitHubContext = true)
+    EnableGitHubContext = true,
+    PublishArtifacts = true)
 ]
 
 partial class Build

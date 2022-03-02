@@ -18,17 +18,6 @@
           "type": "boolean",
           "description": "Indicates to continue a previously failed build attempt"
         },
-        "DockerPassword": {
-          "type": "string",
-          "default": "Secrets must be entered via 'nuke :secret [profile]'"
-        },
-        "DockerRegistryUrl": {
-          "type": "string"
-        },
-        "DockerUsername": {
-          "type": "string",
-          "default": "Secrets must be entered via 'nuke :secret [profile]'"
-        },
         "Help": {
           "type": "boolean",
           "description": "Shows the help text for this build assembly"
@@ -60,6 +49,9 @@
         "NugetKey": {
           "type": "string",
           "default": "Secrets must be entered via 'nuke :secret [profile]'"
+        },
+        "NugetPrerelease": {
+          "type": "string"
         },
         "NugetPublishUrl": {
           "type": "string"
@@ -111,15 +103,12 @@
             "enum": [
               "All",
               "AssemblyInfo",
-              "BuildAndPush",
               "BuildAndServeDocs",
-              "BuildImage",
               "BuildRelease",
               "Clean",
               "Compile",
               "CreateNuget",
               "DocFxBuild",
-              "DockerLogin",
               "DocsInit",
               "DocsMetadata",
               "Install",
@@ -127,7 +116,6 @@
               "Nuget",
               "PublishCode",
               "PublishNuget",
-              "PushImage",
               "Restore",
               "RunTests",
               "ServeDocs",
@@ -147,15 +135,12 @@
             "enum": [
               "All",
               "AssemblyInfo",
-              "BuildAndPush",
               "BuildAndServeDocs",
-              "BuildImage",
               "BuildRelease",
               "Clean",
               "Compile",
               "CreateNuget",
               "DocFxBuild",
-              "DockerLogin",
               "DocsInit",
               "DocsMetadata",
               "Install",
@@ -163,7 +148,6 @@
               "Nuget",
               "PublishCode",
               "PublishNuget",
-              "PushImage",
               "Restore",
               "RunTests",
               "ServeDocs",
