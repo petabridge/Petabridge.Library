@@ -88,7 +88,7 @@ The ready-made commands you can start working with (both on **Windows** and **Li
 This build script is powered by [NUKE](https://nuke.build/); please see their API documentation should you need to make any changes to the [`build.cs`](/build/build.cs) file.
 
 ### Release Notes, Version Numbers, Etc
-This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`common.props`](src/common.props).
+This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`Directory.Build.props`](src/Directory.Build.props).
 
 **RELEASE_NOTES.md**
 ```
