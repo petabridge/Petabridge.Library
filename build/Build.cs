@@ -109,9 +109,9 @@ partial class Build : NukeBuild
         });
 
     Target CreateNuget => _ => _
+      .Unlisted()
       .Description("Creates nuget packages")
       .DependsOn(Compile)
-      //.OnlyWhenDynamic(() => !InvokedTargets.Contains(SignClient))
       .Executes(() =>
       {
           var version = ReleaseNotes.Version.ToString();
@@ -138,10 +138,11 @@ partial class Build : NukeBuild
           }
       });
     Target PublishNuget => _ => _
+    .Unlisted()   
+    .After(CreateNuget, SignClient)
     .Description("Publishes .nuget packages to Nuget")
-    .DependsOn(CreateNuget)
-    .Requires(() => NugetPublishUrl)
-    .Requires(() => !NugetKey.IsNullOrEmpty())
+    .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
+    .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
     .Executes(() =>
     {
         var packages = OutputNuget.GlobFiles("*.nupkg", "*.symbols.nupkg").NotNull();
@@ -197,8 +198,9 @@ partial class Build : NukeBuild
         });
     Target SignClient => _ => _
         .Unlisted()
-        .Requires(() => !SignClientSecret.IsNullOrEmpty())
-        .Requires(() => !SignClientUser.IsNullOrEmpty())
+        .After(CreateNuget)
+        .OnlyWhenDynamic(() => !SignClientSecret.IsNullOrEmpty())
+        .OnlyWhenDynamic(() => !SignClientUser.IsNullOrEmpty())
         .Executes(() =>
         {
             var assemblies = OutputNuget.GlobFiles("*.nupkg");
@@ -220,10 +222,8 @@ partial class Build : NukeBuild
                 //SignClient(stringBuilder.ToString(), workingDirectory: RootDirectory, timeout: TimeSpan.FromMinutes(5).Minutes);
             }
         });
-    Target SignPackages => _ => _
-    .DependsOn(CreateNuget, SignClient);
     Target Nuget => _ => _
-        .DependsOn(SignPackages, PublishNuget);
+        .DependsOn(CreateNuget, SignClient, PublishNuget);
     private AbsolutePath[] GetDockerProjects()
     {
         return SourceDirectory.GlobFiles("**/Dockerfile")// folders with Dockerfiles in it
@@ -287,7 +287,7 @@ partial class Build : NukeBuild
             .SetLogLevel(DocFXLogLevel.Verbose));
         });
 
-    Target DocFxBuild => _ => _
+    Target DocFx => _ => _
         .Description("Builds Documentation")
         .DependsOn(DocsMetadata)
         .Executes(() =>
@@ -297,11 +297,9 @@ partial class Build : NukeBuild
             .SetLogLevel(DocFXLogLevel.Verbose));
         });
 
-    Target BuildAndServeDocs => _ => _
-    .DependsOn(DocFxBuild, ServeDocs);
-
     Target ServeDocs => _ => _
         .Description("Build and preview documentation")
+        .DependsOn(DocFx)
         .Executes(() => DocFXServe(s => s.SetFolder(DocFxDir).SetPort(Port)));
 
     Target Compile => _ => _

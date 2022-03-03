@@ -119,8 +119,7 @@
               "Restore",
               "RunTests",
               "ServeDocs",
-              "SignClient",
-              "SignPackages"
+              "SignClient"
             ]
           }
         },
@@ -151,8 +150,7 @@
               "Restore",
               "RunTests",
               "ServeDocs",
-              "SignClient",
-              "SignPackages"
+              "SignClient"
             ]
           }
         },
