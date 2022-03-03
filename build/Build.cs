@@ -138,9 +138,9 @@ partial class Build : NukeBuild
           }
       });
     Target PublishNuget => _ => _
-    .Unlisted()   
-    .After(CreateNuget, SignClient)
+    .Unlisted()
     .Description("Publishes .nuget packages to Nuget")
+    .After(CreateNuget, SignClient)
     .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
     .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
     .Executes(() =>
@@ -199,6 +199,7 @@ partial class Build : NukeBuild
     Target SignClient => _ => _
         .Unlisted()
         .After(CreateNuget)
+        .Before(PublishNuget)
         .OnlyWhenDynamic(() => !SignClientSecret.IsNullOrEmpty())
         .OnlyWhenDynamic(() => !SignClientUser.IsNullOrEmpty())
         .Executes(() =>
