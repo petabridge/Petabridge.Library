@@ -27,33 +27,16 @@ You can update or add to what exist in `Build.CI.GitHubActions.cs` (`AutoGenerat
     OnPullRequestBranches = new[] { "master", "dev" },
     CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
     InvokedTargets = new[] { nameof(Tests) },
-    //causes the on push to not trigger - maybe path-ignore is the right approach!
-    //OnPushExcludePaths = new[] { "docs/**/*", "package.json", "README.md" },
-    PublishArtifacts = false,
-    EnableGitHubContext = true)
-]
-
-[CustomGitHubActions("Docker_build",
-    GitHubActionsImage.UbuntuLatest,
-    AutoGenerate = true,
-    OnPushBranches = new[] { "master", "dev" },
-    OnPullRequestBranches = new[] { "master", "dev" },
-    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
-    InvokedTargets = new[] { nameof(BuildImage) },
-    ImportSecrets = new [] { "Docker_Username", "Docker_Password" },
-    //causes the on push to not trigger - maybe path-ignore is the right approach!
-    //OnPushExcludePaths = new[] { "docs/**/*", "package.json", "README.md" },
+    PublishArtifacts = true,
     EnableGitHubContext = true)
 ]
 [CustomGitHubActions("Windows_release",
     GitHubActionsImage.WindowsLatest,
     AutoGenerate = true,
     OnPushBranches = new[] { "refs/tags/*" },
-    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
-    InvokedTargets = new[] { nameof(BuildImage) },
+    InvokedTargets = new[] { nameof(NuGet) },
     ImportSecrets = new[] { "Nuget_Key" },
-    //causes the on push to not trigger - maybe path-ignore is the right approach!
-    //OnPushExcludePaths = new[] { "docs/**/*", "package.json", "README.md" },
+    PublishArtifacts = true,
     EnableGitHubContext = true)
 ]
 
@@ -66,10 +49,8 @@ PowerShell Desktop version 5.1.19041.1320
 Microsoft (R) .NET Core SDK version 6.0.101
 11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
 11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
-11:42:25 [INF] Creating directory C:\Users\user\source\repos\Petabridge.Library\.github\workflows...
 11:42:28 [WRN] Configuration files for GitHubActions (Windows_release) have changed.
 11:42:28 [WRN] Configuration files for GitHubActions (pr_validation) have changed.
-11:42:28 [WRN] Configuration files for GitHubActions (Docker_build) have changed.
 Press any key to continue ...
 
 ███╗   ██╗██╗   ██╗██╗  ██╗███████╗
@@ -94,112 +75,37 @@ If you desire to add more commands, please see the [Fundamentals](https://nuke.b
 
 The ready-made commands you can start working with (both on **Windows** and **Linux**), are detailed as follows:
 
-* `build.cmd all` - runs the following commands: `NBench`, `Tests`, and `Nuget`.
+* `build.cmd all` - runs the following commands: `BuildRelease`, `RunTests`, `NBench` and `Nuget`.
 * `build.cmd compile` - compiles the solution in `Release` mode. The default mode is `Release`, to compile in `Debug` mode => `--configuration debug`
-* `build.cmd tests` - compiles the solution in `Release` mode and runs the unit test suite (all projects that end with the `.Tests.csproj` suffix). All of the output will be published to the `./TestResults` folder.
+* `build.cmd buildrelease` - compiles the solution in `Release` mode.
+* `build.cmd runtests` - compiles the solution in `Release` mode and runs the unit test suite (all projects that end with the `.Tests.csproj` suffix). All of the output will be published to the `./TestResults` folder.
 * `build.cmd nbench` - compiles the solution in `Release` mode and runs the [NBench](https://nbench.io/) performance test suite (all projects that end with the `.Tests.Performance.csproj` suffix). All of the output will be published to the `./PerfResults` folder.
-* `build.cmd nuget` - compiles the solution in `Release` mode and creates Nuget packages from any project that does not have `<IsPackable>false</IsPackable>` set and uses the version number from `GitVersion.SemVer`.
-* `build.cmd signpackages --SignClientUser $(signingUsername) --SignClientSecret $(signingPassword)` - compiles the solution in `Release` modem creates Nuget packages from any project that does not have `<IsPackable>false</IsPackable>` set using the version number from `GitVersion.SemVer`, and then signs those packages using the SignClient data below.
-* `build.cmd signandpublishpackage --SignClientUser $(signingUsername) --SignClientSecret $(signingPassword) --nugetpublishurl $(nugetUrl) --nugetkey $(nugetKey)` - compiles the solution in `Release` modem creates Nuget packages from any project that does not have `<IsPackable>false</IsPackable>` set using the version number from `GitVersion.SemVer`, signs those packages using the SignClient data below, and then publishes those packages to the `$(nugetUrl)` using NuGet key `$(nugetKey)`.
-* `build.cmd docfxBuild` - compiles the solution in `Release` mode and then uses [DocFx](http://dotnet.github.io/docfx/) to generate website documentation inside the `./docs/_site` folder. Execute `build.cmd servedocs` after build is done to preview the documentation.
-* `build.cmd buildAndServeDocs` - this combines `build.cmd docfxBuild` and ``build.cmd servedocs` in one go!
+* `build.cmd nuget` - compiles the solution in `Release` mode and creates Nuget packages from any project that does not have `<IsPackable>false</IsPackable>` set and uses the version number from `RELEASE_NOTES.md`.
+* `build.cmd nuget --nugetprerelease dev` - compiles the solution in `Release` mode and creates Nuget packages from any project that does not have `<IsPackable>false</IsPackable>` set - but in this instance all projects will have a `VersionSuffix` of `-beta{DateTime.UtcNow.Ticks}`. It's typically used for publishing nightly releases.
+* `build.cmd nuget --SignClientUser $(signingUsername) --SignClientSecret $(signingPassword)` - compiles the solution in `Release` modem creates Nuget packages from any project that does not have `<IsPackable>false</IsPackable>` set using the version number from `RELEASE_NOTES.md`, and then signs those packages using the SignClient data below.
+* `build.cmd nuget --SignClientUser $(signingUsername) --SignClientSecret $(signingPassword) --nugetpublishurl $(nugetUrl) --nugetkey $(nugetKey)` - compiles the solution in `Release` modem creates Nuget packages from any project that does not have `<IsPackable>false</IsPackable>` set using the version number from `RELEASE_NOTES.md`, signs those packages using the SignClient data below, and then publishes those packages to the `$(nugetUrl)` using NuGet key `$(nugetKey)`.
+* `build.cmd DocFx` - compiles the solution in `Release` mode and then uses [DocFx](http://dotnet.github.io/docfx/) to generate website documentation inside the `./docs/_site` folder. Use the `build.cmd servedocs` on Windows to preview the documentation.
 
-### Version Management
-The template makes use of [GitVersion](https://gitversion.net) for automated versioning. GitVersion is a tool that generates a Semantic Version number based on your Git history.
-
-The default `GitVersion.yml` is as follows (you can edit to match your branching strategy - [gitflow](https://gitversion.net/docs/learn/branching-strategies/gitflow/examples) is default):
-
-```
-assembly-versioning-scheme: MajorMinorPatch
-mode: ContinuousDelivery
-continuous-delivery-fallback-tag: ''
-next-version: 0.1.0
-branches: # https://gitversion.net/docs/learn/branching-strategies/gitflow/examples
-  main:
-    regex: ^master$|^main$
-    mode: ContinuousDelivery
-    tag: ''
-    increment: Patch
-    prevent-increment-of-merged-branch-version: true
-    track-merge-target: false
-    source-branches: [ 'develop', 'release' ]
-    tracks-release-branches: false
-    is-release-branch: false
-    is-mainline: true
-    pre-release-weight: 55000
-  develop:
-    regex: ^dev(elop)?(ment)?$
-    mode: ContinuousDeployment
-    tag: alpha
-    increment: Minor
-    prevent-increment-of-merged-branch-version: false
-    track-merge-target: true
-    source-branches: []
-    tracks-release-branches: true
-    is-release-branch: false
-    is-mainline: false
-    pre-release-weight: 0
-  release:
-    regex: ^releases?[/-]
-    mode: ContinuousDelivery
-    tag: beta
-    increment: None
-    prevent-increment-of-merged-branch-version: true
-    track-merge-target: false
-    source-branches: [ 'develop', 'main']
-    tracks-release-branches: false
-    is-release-branch: true
-    is-mainline: false
-    pre-release-weight: 30000
-  feature:
-    regex: ^features?[/-]
-    mode: ContinuousDelivery
-    tag: useBranchName
-    increment: Inherit
-    prevent-increment-of-merged-branch-version: false
-    track-merge-target: false
-    source-branches: [ 'develop'] # features should branch off from develop branch
-    tracks-release-branches: false
-    is-release-branch: false
-    is-mainline: false
-    pre-release-weight: 30000
-ignore:
-  sha: []
-```
-## How does this work?
-
-If I changed my current branch to:
-
-- `{pre-release}` branch:
-    * `build.cmd nuget` - creates pre-release Nuget packages tagged with `{pre-release}` in this format: `{next-version}-{pre-release branch}.{build}`.
-
-- `{final release}` branch:
-    * `build.cmd nuget` - creates final-release Nuget packages: `{next-version}`. 
-
-`build.cmd nuget` will check if current branch matches the `ReleaseBranch`. If it does, it will check if the `ChangeLog.md` has the `next-version`, if not it fails. Execute the following command to update `RunChangeLog.md` when you are ready to create final release: `build.cmd runchangelog`.
-
-### Deployment
-Petabridge.Library.Web uses Docker for deployment - to create Docker images for this project, please run the following command:
-
-```
-build.cmd buildImage
-```
-
-By default `buildImage` will look for every `.csproj` file that has a `Dockerfile` in the same directory - from there the name of the `.csproj` will be converted into [the supported Docker image name format](https://docs.docker.com/engine/reference/commandline/tag/#extended-description), so "Petabridge.Library.csproj" will be converted to an image called `petabridge.library:latest` and `petabridge.library:{VERSION}`, where version is determined using the rules defined in the section below.
-
-#### Pushing to a Remote Docker Registry
-You can also specify a remote Docker registry URL and that will cause a copy of this Docker image to be published there as well:
+This build script is powered by [NUKE](https://nuke.build/); please see their API documentation should you need to make any changes to the [`build.cs`](/build/build.cs) file.
 
 ### Release Notes, Version Numbers, Etc
-This project will automatically populate its release notes in all of its modules via the entries written inside [`CHANGELOG.md`](CHANGELOG.md) and will automatically update the versions of all assemblies and NuGet packages via `GitVersion`.
+This project will automatically populate its release notes in all of its modules via the entries written inside [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and will automatically update the versions of all assemblies and NuGet packages via the metadata included inside [`Directory.Build.props`](src/Directory.Build.props).
 
-**CHANGELOG.md** (Release Notes)
+**RELEASE_NOTES.md**
 ```
-## [vNext]
-- Next release notes
+#### [0.1.0] / October 05 2019 ####
+First release
+```
 
-## [0.1.0] / 14 January 2022
-- First release
+In this instance, the NuGet and assembly version will be `0.1.0` based on what's available at the top of the `RELEASE_NOTES.md` file.
+
+**RELEASE_NOTES.md**
+```
+#### [0.1.0] / October 05 2019 ####
+First release
+```
+
+But in this case the NuGet and assembly version will be `0.1.0`.
 
 ### Conventions
 The attached build script will automatically do the following based on the conventions of the project names added to this project:
@@ -235,7 +141,7 @@ Once you've gone through the ropes of setting up a code-signing server, you'll n
 Whenever you're ready to run code-signing on the NuGet packages published by `build.cs`, execute the following command:
 
 ```
-build.cmd signpackages --SignClientSecret={your secret} --SignClientUser={your username}
+build.cmd signpackages --SignClientSecret {your secret} --SignClientUser {your username}
 ```
 
 This will invoke the `SignClient` and actually execute code signing against your `.nupkg` files prior to NuGet publication.
