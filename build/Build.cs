@@ -10,7 +10,6 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
-using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
@@ -18,15 +17,11 @@ using static Nuke.Common.Tools.DocFX.DocFXTasks;
 using System.Text.Json;
 using System.IO;
 using static Nuke.Common.ChangeLog.ChangelogTasks;
-using static Nuke.Common.Tools.Git.GitTasks;
 using Nuke.Common.ChangeLog;
-using System.Collections.Generic;
 using Nuke.Common.Tools.DocFX;
 using Nuke.Common.Tools.Docker;
 using static Nuke.Common.Tools.SignClient.SignClientTasks;
-using System.Text;
 using Nuke.Common.Tools.SignClient;
-using Nuke.Common.Tools.BenchmarkDotNet;
 
 [CheckBuildProjectConfigurations]
 [ShutdownDotNetAfterServerBuild]
@@ -43,11 +38,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = Configuration.Release;
 
-    [Parameter("The final release branch")]
-    readonly string ReleaseBranch = "master";
-
     [GitRepository] readonly GitRepository GitRepository;
-    [GitVersion(Framework = "net6.0")] readonly GitVersion GitVersion;
 
     [Parameter] string NugetPublishUrl = "https://api.nuget.org/v3/index.json";
     [Parameter] [Secret] string NugetKey;
@@ -56,16 +47,14 @@ partial class Build : NukeBuild
 
     [Parameter] string SymbolsPublishUrl;
 
-    [Parameter] string DockerRegistryUrl;
+    //usage:
+    //.\build.cmd createnuget --NugetPrerelease {suffix}
+    [Parameter] string NugetPrerelease;
 
     // Metadata used when signing packages and DLLs
     [Parameter] string SigningName = "My Library";
     [Parameter] string SigningDescription = "My REALLY COOL Library";
     [Parameter] string SigningUrl = "https://signing.is.cool/";
-
-
-    [Parameter] [Secret] string DockerUsername;
-    [Parameter] [Secret] string DockerPassword;
 
     [Parameter] [Secret] string SignClientSecret;
     [Parameter] [Secret] string SignClientUser;
@@ -77,7 +66,7 @@ partial class Build : NukeBuild
     AbsolutePath OutputPerfTests => RootDirectory / "PerfResults";
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath DocSiteDirectory => RootDirectory / "docs" / "_site";
-    public string ChangelogFile => RootDirectory / "CHANGELOG.md";
+    public string ChangelogFile => RootDirectory / "RELEASE_NOTES.md";
     public AbsolutePath DocFxDir => RootDirectory / "docs";
     public AbsolutePath DocFxDirJson => DocFxDir / "docfx.json";
 
@@ -89,11 +78,15 @@ partial class Build : NukeBuild
 
     //let hasTeamCity = (not (buildNumber = "0")) // check if we have the TeamCity environment variable for build # set
     static readonly int BuildNumber = _githubContext.HasValue ? int.Parse(_githubContext.Value.GetProperty("run_number").GetString()) : 0;
-
+    
+    static readonly string PreReleaseVersionSuffix = "beta"+ (BuildNumber > 0? BuildNumber: DateTime.UtcNow.Ticks.ToString());
     public ChangeLog Changelog => ReadChangelog(ChangelogFile);
 
-    public ReleaseNotes LatestVersion => Changelog.ReleaseNotes.OrderByDescending(s => s.Version).FirstOrDefault() ?? throw new ArgumentException("Bad Changelog File. Version Should Exist");
-    public string ReleaseVersion => LatestVersion.Version?.ToString() ?? throw new ArgumentException("Bad Changelog File. Define at least one version");
+    public ReleaseNotes ReleaseNotes =>  Changelog.ReleaseNotes.OrderByDescending(s => s.Version).FirstOrDefault() ?? throw new ArgumentException("Bad Changelog File. Version Should Exist");
+
+    private string VersionFromReleaseNotes => ReleaseNotes.Version.IsPrerelease ? ReleaseNotes.Version.OriginalVersion: "";
+    private string VersionSuffix => NugetPrerelease == "dev" ? PreReleaseVersionSuffix: NugetPrerelease == "" ? VersionFromReleaseNotes: NugetPrerelease;
+    public string ReleaseVersion => ReleaseNotes.Version?.ToString() ?? throw new ArgumentException("Bad Changelog File. Define at least one version");
 
     Target Clean => _ => _
         .Description("Cleans all the output directories")
@@ -114,41 +107,15 @@ partial class Build : NukeBuild
             DotNetRestore(s => s
                 .SetProjectFile(Solution));
         });
-    IEnumerable<string> ChangelogSectionNotes => ExtractChangelogSectionNotes(ChangelogFile);
 
-    Target RunChangelog => _ => _
-        .OnlyWhenDynamic(() => GitVersion.BranchName == ReleaseBranch)
-        .Description("Updates the release notes and version number in the `ChangeLog.md`")
-        .Executes(() =>
-        {
-            FinalizeChangelog(ChangelogFile, GitVersion.MajorMinorPatch, GitRepository);
-
-            Git($"add {ChangelogFile}");
-            Git($"commit -m \"Finalize {Path.GetFileName(ChangelogFile)} for {GitVersion.MajorMinorPatch}.\"");
-
-            //To sign your commit
-            //Git($"commit -S -m \"Finalize {Path.GetFileName(ChangelogFile)} for {vNext}.\"");
-
-            Git($"tag -f {GitVersion.MajorMinorPatch}");
-        });
-    Target Nuget => _ => _
+    Target CreateNuget => _ => _
+      .Unlisted()
       .Description("Creates nuget packages")
-      .Before(SignClient, PublishNuget)
-      .DependsOn(Tests)
+      .DependsOn(Compile)
       .Executes(() =>
       {
-          var version = GitVersion.SemVer;
-          var branchName = GitVersion.BranchName;
-
-          if (branchName.Equals(ReleaseBranch, StringComparison.OrdinalIgnoreCase)
-          && !GitVersion.MajorMinorPatch.Equals(LatestVersion.Version.ToString()))
-          {
-              // Force CHANGELOG.md in case it skipped the mind
-              Assert.Fail($"CHANGELOG.md needs to be update for final release. Current version: '{LatestVersion.Version}'. Next version: {GitVersion.MajorMinorPatch}");
-          }
-          var releaseNotes = branchName.Equals(ReleaseBranch, StringComparison.OrdinalIgnoreCase)
-                             ? GetNuGetReleaseNotes(ChangelogFile, GitRepository)
-                             : ParseReleaseNote();
+          var version = ReleaseNotes.Version.ToString();
+          var releaseNotes = GetNuGetReleaseNotes(ChangelogFile, GitRepository);
 
           var projects = SourceDirectory.GlobFiles("**/*.csproj")
           .Except(SourceDirectory.GlobFiles("**/*Tests.csproj", "**/*Tests*.csproj"));
@@ -162,82 +129,20 @@ partial class Build : NukeBuild
                   .EnableNoRestore()
                   .SetAssemblyVersion(version)
                   .SetFileVersion(version)
-                  .SetVersion(version)
+                  .SetVersionPrefix(version)
+                  .SetVersionSuffix(VersionSuffix)    
                   .SetPackageReleaseNotes(releaseNotes)
                   .SetDescription("YOUR_DESCRIPTION_HERE")
                   .SetPackageProjectUrl("YOUR_PACKAGE_URL_HERE")
                   .SetOutputDirectory(OutputNuget));
           }
       });
-    Target DockerLogin => _ => _
-        .Description("Docker login command")
-        .Before(PushImage)
-        .Requires(() => !DockerRegistryUrl.IsNullOrEmpty())
-        .Requires(() => !DockerPassword.IsNullOrEmpty())
-        .Requires(() => !DockerUsername.IsNullOrEmpty())
-        .Executes(() =>
-        {
-            var settings = new DockerLoginSettings()
-                .SetServer(DockerRegistryUrl)
-                .SetUsername(DockerUsername)
-                .SetPassword(DockerPassword);
-            DockerTasks.DockerLogin(settings);
-        });
-    Target BuildImage => _ => _
-        .Description("Build docker image")
-        .DependsOn(PublishCode)
-        .Executes(() =>
-        {
-            var version = LatestVersion;
-            var tagVersion = $"{version.Version.Major}.{version.Version.Minor}.{version.Version.Patch}";
-            var dockfiles = GetDockerProjects();
-            foreach (var dockfile in dockfiles)
-            {
-                var image = $"{Directory.GetParent(dockfile).Name}".ToLower();
-                var tags = new List<string>
-                {
-                    $"{image}:latest",
-                    $"{image}:{tagVersion}"
-                };
-                if (!string.IsNullOrWhiteSpace(DockerRegistryUrl))
-                {
-                    tags.Add($"{DockerRegistryUrl}/{image}:latest");
-                    tags.Add($"{DockerRegistryUrl}/{tagVersion}");
-                }
-                var settings = new DockerBuildSettings()
-                 .SetFile(dockfile)
-                 //.SetPull(true)
-                 .SetPath(Directory.GetParent(dockfile).FullName)
-                 //.SetProcessWorkingDirectory(Directory.GetParent(dockfile).FullName)
-                 .SetTag(tags.ToArray());
-                DockerTasks.DockerBuild(settings);
-            }
-        });
-    Target PushImage => _ => _
-        .Description("Push image to docker registry")
-        .DependsOn(DockerLogin)
-        .Executes(() =>
-        {
-            var version = LatestVersion;
-            var tagVersion = $"{version.Version.Major}.{version.Version.Minor}.{version.Version.Patch}";
-            var dockfiles = GetDockerProjects();
-            foreach (var dockfile in dockfiles)
-            {
-                var image = $"{Directory.GetParent(dockfile).Name}".ToLower();
-                var settings = new DockerImagePushSettings()
-                    .SetName(string.IsNullOrWhiteSpace(DockerRegistryUrl) ? $"{image}:{tagVersion}" : $"{image}:{DockerRegistryUrl}/{tagVersion}");
-                DockerTasks.DockerImagePush(settings);
-            }
-        });
-
-    public Target BuildAndPush => _ => _
-    .DependsOn(DockerLogin, BuildImage, PushImage);
-
-
     Target PublishNuget => _ => _
+    .Unlisted()
     .Description("Publishes .nuget packages to Nuget")
-    .Requires(() => NugetPublishUrl)
-    .Requires(() => !NugetKey.IsNullOrEmpty())
+    .After(CreateNuget, SignClient)
+    .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
+    .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
     .Executes(() =>
     {
         var packages = OutputNuget.GlobFiles("*.nupkg", "*.symbols.nupkg").NotNull();
@@ -267,7 +172,7 @@ partial class Build : NukeBuild
             }
         }
     });
-    Target Tests => _ => _
+    Target RunTests => _ => _
         .Description("Runs all the unit tests")
         .DependsOn(Compile)
         .Executes(() =>
@@ -293,9 +198,10 @@ partial class Build : NukeBuild
         });
     Target SignClient => _ => _
         .Unlisted()
+        .After(CreateNuget)
         .Before(PublishNuget)
-        .Requires(() => !SignClientSecret.IsNullOrEmpty())
-        .Requires(() => !SignClientUser.IsNullOrEmpty())
+        .OnlyWhenDynamic(() => !SignClientSecret.IsNullOrEmpty())
+        .OnlyWhenDynamic(() => !SignClientUser.IsNullOrEmpty())
         .Executes(() =>
         {
             var assemblies = OutputNuget.GlobFiles("*.nupkg");
@@ -317,12 +223,8 @@ partial class Build : NukeBuild
                 //SignClient(stringBuilder.ToString(), workingDirectory: RootDirectory, timeout: TimeSpan.FromMinutes(5).Minutes);
             }
         });
-    Target SignPackages => _ => _
-        .DependsOn(Nuget, SignClient);
-
-    Target SignAndPublishPackage => _ => _
-         .Description("Sign and publish nuget packages")
-         .DependsOn(SignPackages, PublishNuget);
+    Target Nuget => _ => _
+        .DependsOn(CreateNuget, SignClient, PublishNuget);
     private AbsolutePath[] GetDockerProjects()
     {
         return SourceDirectory.GlobFiles("**/Dockerfile")// folders with Dockerfiles in it
@@ -331,7 +233,7 @@ partial class Build : NukeBuild
     Target PublishCode => _ => _
         .Unlisted()
         .Description("Publish project as release")
-        .DependsOn(Tests)
+        .DependsOn(RunTests)
         .Executes(() =>
         {
             var dockfiles = GetDockerProjects();
@@ -346,7 +248,7 @@ partial class Build : NukeBuild
         });
     Target All => _ => _
      .Description("Executes NBench, Tests and Nuget targets/commands")
-     .DependsOn(Nuget, NBench);
+     .DependsOn(BuildRelease, RunTests, NBench, Nuget);
 
     Target NBench => _ => _
      .Description("Runs all BenchMarkDotNet tests")
@@ -378,7 +280,7 @@ partial class Build : NukeBuild
     Target DocsMetadata => _ => _
         .Unlisted()
         .Description("Create DocFx metadata")
-        .DependsOn(Compile)
+        .DependsOn(BuildRelease)
         .Executes(() =>
         {
             DocFXMetadata(s => s
@@ -386,7 +288,7 @@ partial class Build : NukeBuild
             .SetLogLevel(DocFXLogLevel.Verbose));
         });
 
-    Target DocFxBuild => _ => _
+    Target DocFx => _ => _
         .Description("Builds Documentation")
         .DependsOn(DocsMetadata)
         .Executes(() =>
@@ -396,11 +298,9 @@ partial class Build : NukeBuild
             .SetLogLevel(DocFXLogLevel.Verbose));
         });
 
-    Target BuildAndServeDocs => _ => _
-    .DependsOn(DocFxBuild, ServeDocs);
-
     Target ServeDocs => _ => _
         .Description("Build and preview documentation")
+        .DependsOn(DocFx)
         .Executes(() => DocFXServe(s => s.SetFolder(DocFxDir).SetPort(Port)));
 
     Target Compile => _ => _
@@ -408,14 +308,25 @@ partial class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(() =>
         {
-            var version = GitVersion.MajorMinorPatch;
+            var version = ReleaseNotes.Version.ToString();
             DotNetBuild(s => s
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetAssemblyVersion(version)
                 .SetFileVersion(version)
-                .SetVersion(GitVersion.SemVer)
+                .SetVersion(version)
                 .EnableNoRestore());
+        });
+
+    Target BuildRelease => _ => _
+    .DependsOn(Clean, AssemblyInfo, Compile);
+
+    Target AssemblyInfo => _ => _
+        .Executes(() =>
+        {
+            XmlTasks.XmlPoke(SourceDirectory / "Directory.Build.props", "//Project/PropertyGroup/PackageReleaseNotes", GetNuGetReleaseNotes(ChangelogFile));
+            XmlTasks.XmlPoke(SourceDirectory / "Directory.Build.props", "//Project/PropertyGroup/VersionPrefix", ReleaseVersion);
+            
         });
 
     Target Install => _ => _
@@ -425,10 +336,6 @@ partial class Build : NukeBuild
             DotNet($@"dotnet tool install SignClient --version 1.3.155 --tool-path ""{ToolsDir}"" ");
             DotNet($"tool install Nuke.GlobalTool --global");
         });
-    string ParseReleaseNote()
-    {
-        return XmlTasks.XmlPeek(SourceDirectory / "Directory.Build.props", "//Project/PropertyGroup/PackageReleaseNotes").FirstOrDefault();
-    }
 
     static void Information(string info)
     {
