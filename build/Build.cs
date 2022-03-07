@@ -22,6 +22,7 @@ using Nuke.Common.Tools.DocFX;
 using Nuke.Common.Tools.Docker;
 using static Nuke.Common.Tools.SignClient.SignClientTasks;
 using Nuke.Common.Tools.SignClient;
+using static Nuke.Common.Tools.Git.GitTasks;
 
 [CheckBuildProjectConfigurations]
 [ShutdownDotNetAfterServerBuild]
@@ -78,14 +79,14 @@ partial class Build : NukeBuild
 
     //let hasTeamCity = (not (buildNumber = "0")) // check if we have the TeamCity environment variable for build # set
     static readonly int BuildNumber = _githubContext.HasValue ? int.Parse(_githubContext.Value.GetProperty("run_number").GetString()) : 0;
-    
-    static readonly string PreReleaseVersionSuffix = "beta"+ (BuildNumber > 0? BuildNumber: DateTime.UtcNow.Ticks.ToString());
+
+    static readonly string PreReleaseVersionSuffix = "beta" + (BuildNumber > 0 ? BuildNumber : DateTime.UtcNow.Ticks.ToString());
     public ChangeLog Changelog => ReadChangelog(ChangelogFile);
 
-    public ReleaseNotes ReleaseNotes =>  Changelog.ReleaseNotes.OrderByDescending(s => s.Version).FirstOrDefault() ?? throw new ArgumentException("Bad Changelog File. Version Should Exist");
+    public ReleaseNotes ReleaseNotes => Changelog.ReleaseNotes.OrderByDescending(s => s.Version).FirstOrDefault() ?? throw new ArgumentException("Bad Changelog File. Version Should Exist");
 
-    private string VersionFromReleaseNotes => ReleaseNotes.Version.IsPrerelease ? ReleaseNotes.Version.OriginalVersion: "";
-    private string VersionSuffix => NugetPrerelease == "dev" ? PreReleaseVersionSuffix: NugetPrerelease == "" ? VersionFromReleaseNotes: NugetPrerelease;
+    private string VersionFromReleaseNotes => ReleaseNotes.Version.IsPrerelease ? ReleaseNotes.Version.OriginalVersion : "";
+    private string VersionSuffix => NugetPrerelease == "dev" ? PreReleaseVersionSuffix : NugetPrerelease == "" ? VersionFromReleaseNotes : NugetPrerelease;
     public string ReleaseVersion => ReleaseNotes.Version?.ToString() ?? throw new ArgumentException("Bad Changelog File. Define at least one version");
 
     Target Clean => _ => _
@@ -130,7 +131,7 @@ partial class Build : NukeBuild
                   .SetAssemblyVersion(version)
                   .SetFileVersion(version)
                   .SetVersionPrefix(version)
-                  .SetVersionSuffix(VersionSuffix)    
+                  .SetVersionSuffix(VersionSuffix)
                   .SetPackageReleaseNotes(releaseNotes)
                   .SetDescription("YOUR_DESCRIPTION_HERE")
                   .SetPackageProjectUrl("YOUR_PACKAGE_URL_HERE")
@@ -260,7 +261,7 @@ partial class Build : NukeBuild
              .ForEach(path =>
              {
                  DotNetRun(s => s
-                 .SetApplicationArguments($"--no-build -c release --concurrent true --trace true --output {OutputPerfTests} --diagnostic") 
+                 .SetApplicationArguments($"--no-build -c release --concurrent true --trace true --output {OutputPerfTests} --diagnostic")
                  .SetProcessLogOutput(true)
                  .SetProcessWorkingDirectory(Directory.GetParent(path).FullName)
                  .SetProcessExecutionTimeout((int)TimeSpan.FromMinutes(15).TotalMilliseconds)
@@ -326,9 +327,16 @@ partial class Build : NukeBuild
         {
             XmlTasks.XmlPoke(SourceDirectory / "Directory.Build.props", "//Project/PropertyGroup/PackageReleaseNotes", GetNuGetReleaseNotes(ChangelogFile));
             XmlTasks.XmlPoke(SourceDirectory / "Directory.Build.props", "//Project/PropertyGroup/VersionPrefix", ReleaseVersion);
-            
+
         });
 
+    Target SetFilePermission => _ => _
+    .Description("User may experience PERMISSION issues - this target be used to fix that!")
+    .Executes(() =>
+    {
+        Git($"update-index --chmod=+x {RootDirectory}/build.cmd");
+        Git($"update-index --chmod=+x {RootDirectory}/build.sh");
+    });
     Target Install => _ => _
         .Description("Install `Nuke.GlobalTool` and SignClient")
         .Executes(() =>
