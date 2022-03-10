@@ -24,6 +24,7 @@ using static Nuke.Common.Tools.SignClient.SignClientTasks;
 using Nuke.Common.Tools.SignClient;
 using static Nuke.Common.Tools.Git.GitTasks;
 using Octokit;
+using Nuke.Common.Utilities;
 
 [CheckBuildProjectConfigurations]
 [ShutdownDotNetAfterServerBuild]
@@ -145,7 +146,7 @@ partial class Build : NukeBuild
     .After(CreateNuget, SignClient)
     .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
     .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
-    .Triggers(GitHubRelease, PublishNugetOnGitHub)
+    .Triggers(GitHubRelease)
     .Executes(() =>
     {
         var packages = OutputNuget.GlobFiles("*.nupkg", "*.symbols.nupkg").NotNull();
@@ -173,6 +174,7 @@ partial class Build : NukeBuild
         }
     });
     Target AuthenticatedGitHubClient => _ => _
+        .Unlisted()
         .OnlyWhenDynamic(() => !string.IsNullOrWhiteSpace(GitHubToken))
         .Executes(() =>
         {
@@ -182,16 +184,18 @@ partial class Build : NukeBuild
             };
         });
     Target GitHubRelease => _ => _
+        .Unlisted()  
         .Description("Creates a GitHub release (or amends existing) and uploads the artifact")
         .OnlyWhenDynamic(() => !string.IsNullOrWhiteSpace(GitHubToken))
         .DependsOn(AuthenticatedGitHubClient)
-        .OnlyWhenDynamic(() => GitRepository.IsOnMainOrMasterBranch() || GitRepository.IsOnReleaseBranch())
         .Executes(async () =>
         {
             var version = ReleaseNotes.Version.ToString();
-            var releaseNotes = GetNuGetReleaseNotes(ChangelogFile, GitRepository);
+            var releaseNotes = GetNuGetReleaseNotes(ChangelogFile);
             Release release;
-            var releaseName = $"{version}-{VersionSuffix}";
+            var releaseName = $"{version}";
+            if (!VersionSuffix.IsNullOrWhiteSpace())
+                releaseName = $"{version}-{VersionSuffix}";
             var identifier = GitRepository.Identifier.Split("/");
             var (gitHubOwner, repoName) = (identifier[0], identifier[1]);
             try
@@ -202,6 +206,7 @@ partial class Build : NukeBuild
             {
                 var newRelease = new NewRelease(releaseName)
                 {
+                    Body = releaseNotes,    
                     Name = releaseName,
                     Draft = false,
                     Prerelease = GitRepository.IsOnReleaseBranch()
@@ -223,25 +228,6 @@ partial class Build : NukeBuild
                 Information($"  {releaseAsset.BrowserDownloadUrl}");
             }
         });
-    Target PublishNugetOnGitHub => _ => _
-    .OnlyWhenDynamic(() => !GitHubToken.IsNullOrEmpty())
-    .OnlyWhenDynamic(() => GitRepository != null)
-    .Executes(() =>
-    {
-        
-        var packages = OutputNuget.GlobFiles("*.nupkg", "*.symbols.nupkg")
-        //.Where(x => !x.Name.EndsWith("symbols.nupkg"))
-        .NotNull();
-        foreach (var package in packages)
-        {
-            DotNetNuGetPush(s => s
-            .SetApiKey(GitHubToken)
-            .SetSymbolApiKey(GitHubToken)
-            .SetTargetPath(package)
-            .SetSource(GitRepository.ToString())
-            .SetSymbolSource(GitRepository.ToString()));
-        }
-    });
     Target RunTests => _ => _
         .Description("Runs all the unit tests")
         .DependsOn(Compile)
