@@ -173,6 +173,7 @@ partial class Build : NukeBuild
         }
     });
     Target AuthenticatedGitHubClient => _ => _
+        .OnlyWhenDynamic(() => !string.IsNullOrWhiteSpace(GitHubToken))
         .Executes(() =>
         {
             GitHubClient = new GitHubClient(new ProductHeaderValue("nuke-build"))
