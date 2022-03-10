@@ -23,7 +23,7 @@ using Nuke.Common.Utilities;
 [CustomGitHubActions("Windows_release",
     GitHubActionsImage.WindowsLatest,
     AutoGenerate = true,
-    OnPushBranches = new[] { "refs/tags/*" },
+    OnPushTags = new[] { "*" },
     InvokedTargets = new[] { nameof(NuGet) },
     ImportSecrets = new[] { "Nuget_Key" },
     EnableGitHubContext = true,
