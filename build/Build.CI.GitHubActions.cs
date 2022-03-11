@@ -12,7 +12,7 @@ using Nuke.Common.Utilities;
 [CustomGitHubActions("pr_validation",
     GitHubActionsImage.WindowsLatest,
     GitHubActionsImage.UbuntuLatest,
-    AutoGenerate = true,
+    AutoGenerate = false,
     OnPushBranches = new[] { "master", "dev" },
     OnPullRequestBranches = new[] { "master", "dev" },
     InvokedTargets = new[] { nameof(All) },
@@ -22,10 +22,10 @@ using Nuke.Common.Utilities;
 
 [CustomGitHubActions("Windows_release",
     GitHubActionsImage.WindowsLatest,
-    AutoGenerate = true,
-    OnPushBranches = new[] { "refs/tags/*" },
+    OnPushTags = new[] { "*" },
+    AutoGenerate = false,
     InvokedTargets = new[] { nameof(NuGet) },
-    ImportSecrets = new[] { "Nuget_Key" },
+    ImportSecrets = new[] { "Nuget_Key", "GITHUB_TOKEN" },
     EnableGitHubContext = true,
     PublishArtifacts = true)
 ]

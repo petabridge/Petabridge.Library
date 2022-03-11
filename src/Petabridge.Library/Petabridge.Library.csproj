@@ -5,8 +5,6 @@
 	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>Your description here.</Description>
   </PropertyGroup>
-	<ItemGroup>
-		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
-	</ItemGroup>
+	
 
 </Project>
