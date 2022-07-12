@@ -17,7 +17,7 @@
     <TestsNetCoreFramework>net6.0</TestsNetCoreFramework>
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.1</XunitVersion>
-    <XunitRunneVisualstudio>2.4.5</XunitRunneVisualstudio>
+    <XunitRunnerVisualstudio>2.4.5</XunitRunnerVisualstudio>
     <TestSdkVersion>17.2.0</TestSdkVersion>
   </PropertyGroup>
   <!-- SourceLink support for all Akka.NET projects -->
