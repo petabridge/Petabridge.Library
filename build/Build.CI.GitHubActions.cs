@@ -27,8 +27,7 @@ using Nuke.Common.Utilities;
     InvokedTargets = new[] { nameof(NuGet) },
     ImportSecrets = new[] { "Nuget_Key"},
     PublishArtifacts = true,
-    EnableGitHubToken = true)//=====
-    ////////////
+    EnableGitHubToken = true)
 ]
 
 partial class Build
