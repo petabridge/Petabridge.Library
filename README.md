@@ -27,8 +27,7 @@ You can update or add to what exist in `Build.CI.GitHubActions.cs` (`AutoGenerat
     OnPullRequestBranches = new[] { "master", "dev" },
     CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
     InvokedTargets = new[] { nameof(Tests) },
-    PublishArtifacts = true,
-    EnableGitHubContext = true)
+    PublishArtifacts = true)
 ]
 [CustomGitHubActions("Windows_release",
     GitHubActionsImage.WindowsLatest,
@@ -36,8 +35,7 @@ You can update or add to what exist in `Build.CI.GitHubActions.cs` (`AutoGenerat
     OnPushBranches = new[] { "refs/tags/*" },
     InvokedTargets = new[] { nameof(NuGet) },
     ImportSecrets = new[] { "Nuget_Key" },
-    PublishArtifacts = true,
-    EnableGitHubContext = true)
+    PublishArtifacts = true)
 ]
 
 ```

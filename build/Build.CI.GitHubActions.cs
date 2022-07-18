@@ -16,8 +16,8 @@ using Nuke.Common.Utilities;
     OnPushBranches = new[] { "master", "dev" },
     OnPullRequestBranches = new[] { "master", "dev" },
     InvokedTargets = new[] { nameof(All) },
-    PublishArtifacts = false,
-    EnableGitHubContext = true)
+    PublishArtifacts = true,
+    EnableGitHubToken = true)
 ]
 
 [CustomGitHubActions("Windows_release",
@@ -25,9 +25,9 @@ using Nuke.Common.Utilities;
     OnPushTags = new[] { "*" },
     AutoGenerate = false,
     InvokedTargets = new[] { nameof(NuGet) },
-    ImportSecrets = new[] { "Nuget_Key", "GITHUB_TOKEN" },
-    EnableGitHubContext = true,
-    PublishArtifacts = true)
+    ImportSecrets = new[] { "Nuget_Key"},
+    PublishArtifacts = true,
+    EnableGitHubToken = true)
 ]
 
 partial class Build
