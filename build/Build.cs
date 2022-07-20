@@ -149,7 +149,7 @@ partial class Build : NukeBuild
     .After(CreateNuget, SignClient)
     .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
     .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
-    .Triggers(GitHubRelease)
+    .Before(GitHubRelease)
     .Executes(() =>
     {
         var packages = OutputNuget.GlobFiles("*.nupkg", "*.symbols.nupkg").NotNull();
