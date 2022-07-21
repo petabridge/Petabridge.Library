@@ -149,7 +149,7 @@ partial class Build : NukeBuild
     .After(CreateNuget, SignClient)
     .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
     .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
-    .Triggers(GitHubRelease)
+    .Before(GitHubRelease)
     .Executes(() =>
     {
         var packages = OutputNuget.GlobFiles("*.nupkg", "*.symbols.nupkg").NotNull();
@@ -292,27 +292,7 @@ partial class Build : NukeBuild
         });
     Target Nuget => _ => _
         .DependsOn(CreateNuget, SignClient, PublishNuget);
-    private AbsolutePath[] GetDockerProjects()
-    {
-        return SourceDirectory.GlobFiles("**/Dockerfile")// folders with Dockerfiles in it
-            .ToArray();
-    }
-    Target PublishCode => _ => _
-        .Unlisted()
-        .Description("Publish project as release")
-        .DependsOn(RunTests)
-        .Executes(() =>
-        {
-            var dockfiles = GetDockerProjects();
-            foreach (var dockfile in dockfiles)
-            {
-                Information(dockfile.Parent.ToString());
-                var project = dockfile.Parent.GlobFiles("*.csproj").First();
-                DotNetPublish(s => s
-                .SetProject(project)
-                .SetConfiguration(Configuration.Release));
-            }
-        });
+    
     Target All => _ => _
      .Description("Executes NBench, Tests and Nuget targets/commands")
      .DependsOn(BuildRelease, RunTests, NBench, Nuget);
