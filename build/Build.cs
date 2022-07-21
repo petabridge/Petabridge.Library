@@ -317,27 +317,9 @@ partial class Build : NukeBuild
     //--------------------------------------------------------------------------------
     // Documentation 
     //--------------------------------------------------------------------------------
-    Target DocsInit => _ => _
-        .Unlisted()
-        .DependsOn(Compile)
-        .Executes(() =>
-        {
-            DocFXInit(s => s.SetOutputFolder(DocFxDir).SetQuiet(true));
-        });
-    Target DocsMetadata => _ => _
-        .Unlisted()
-        .Description("Create DocFx metadata")
-        .DependsOn(BuildRelease)
-        .Executes(() =>
-        {
-            DocFXMetadata(s => s
-            .SetProjects(DocFxDirJson)
-            .SetLogLevel(DocFXLogLevel.Verbose));
-        });
-
     Target DocFx => _ => _
         .Description("Builds Documentation")
-        .DependsOn(DocsMetadata)
+        .DependsOn(Compile)
         .Executes(() =>
         {
             DocFXBuild(s => s
