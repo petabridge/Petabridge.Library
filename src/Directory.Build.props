@@ -18,11 +18,11 @@
     <NBenchVersion>1.2.2</NBenchVersion>
     <XunitVersion>2.4.2</XunitVersion>
     <XunitRunnerVisualstudio>2.4.5</XunitRunnerVisualstudio>
-    <TestSdkVersion>17.4.0</TestSdkVersion>
+    <TestSdkVersion>17.4.1</TestSdkVersion>
   </PropertyGroup>
   <!-- SourceLink support for all Akka.NET projects -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
 	<None Include="$(MSBuildThisFileDirectory)\..\README.md" Pack="true" Visible="false" PackagePath="\" />
   </ItemGroup>
   <PropertyGroup>

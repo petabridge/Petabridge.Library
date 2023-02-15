@@ -14,7 +14,6 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.DocFX.DocFXTasks;
-using System.Text.Json;
 using System.IO;
 using static Nuke.Common.ChangeLog.ChangelogTasks;
 using Nuke.Common.ChangeLog;
@@ -22,7 +21,6 @@ using Nuke.Common.Tools.DocFX;
 using Nuke.Common.Tools.Docker;
 using static Nuke.Common.Tools.SignClient.SignClientTasks;
 using Nuke.Common.Tools.SignClient;
-using static Nuke.Common.Tools.Git.GitTasks;
 using Octokit;
 using Nuke.Common.Utilities;
 using Nuke.Common.CI.GitHubActions;
@@ -41,7 +39,7 @@ partial class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    public static int Main() => Execute<Build>(x => x.Install);
+    public static int Main() => Execute<Build>(x => x.RunTests, x => x.CreateNuget);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = Configuration.Release;
