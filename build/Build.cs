@@ -148,7 +148,7 @@ partial class Build : NukeBuild
     .After(CreateNuget, SignClient)
     .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
     .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
-    .Executes(async() =>
+    .Executes(async () =>
     {
         var packages = OutputNuget.GlobFiles("*.nupkg", "*.symbols.nupkg").NotNull();
         var shouldPublishSymbolsPackages = !string.IsNullOrWhiteSpace(SymbolsPublishUrl);
@@ -261,8 +261,8 @@ partial class Build : NukeBuild
         .Unlisted()
         .After(CreateNuget)
         .Before(PublishNuget)
-        .OnlyWhenDynamic(() => !SignClientSecret.IsNullOrEmpty())
-        .OnlyWhenDynamic(() => !SignClientUser.IsNullOrEmpty())
+        .OnlyWhenDynamic(() => !SignClientSecret.IsNullOrEmpty() || !SignClientUser.IsNullOrEmpty())
+        //.OnlyWhenDynamic(() => !SignClientUser.IsNullOrEmpty())
         .Executes(() =>
         {
             var assemblies = OutputNuget.GlobFiles("*.nupkg");
