@@ -54,7 +54,7 @@ partial class Build : NukeBuild
     [Parameter] string SymbolsPublishUrl;
 
     //usage:
-    //.\build.cmd createnuget --NugetPrerelease {suffix}
+    //.\build.cmd CreateNuGet --NugetPrerelease {suffix}
     [Parameter] string NugetPrerelease;
 
     // Metadata used when signing packages and DLLs
@@ -118,7 +118,7 @@ partial class Build : NukeBuild
                 .SetProjectFile(Solution));
         });
 
-    Target CreateNuget => _ => _
+    Target CreateNuGet => _ => _
       .Unlisted()
       .Description("Creates nuget packages")
       .DependsOn(Compile)
@@ -145,10 +145,10 @@ partial class Build : NukeBuild
                   .SetOutputDirectory(OutputNuget));
           }
       });
-    Target PublishNuget => _ => _
+    Target PublishNuGet => _ => _
     .Unlisted()
     .Description("Publishes .nuget packages to Nuget")
-    .After(CreateNuget, SignClient)
+    .After(CreateNuGet, SignClient)
     .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
     .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
     .Executes(async () =>
@@ -262,8 +262,8 @@ partial class Build : NukeBuild
         });
     Target SignClient => _ => _
         .Unlisted()
-        .After(CreateNuget)
-        .Before(PublishNuget)
+        .After(CreateNuGet)
+        .Before(PublishNuGet)
         .OnlyWhenDynamic(() => !SignClientSecret.IsNullOrEmpty() && !SignClientUser.IsNullOrEmpty())
         //.OnlyWhenDynamic(() => !SignClientUser.IsNullOrEmpty())
         .Executes(() =>
@@ -288,7 +288,7 @@ partial class Build : NukeBuild
             }
         });
     Target Nuget => _ => _
-        .DependsOn(CreateNuget, SignClient, PublishNuget);
+        .DependsOn(CreateNuGet, SignClient, PublishNuGet);
     
     Target All => _ => _
      .Description("Executes NBench, Tests and Nuget targets/commands")
