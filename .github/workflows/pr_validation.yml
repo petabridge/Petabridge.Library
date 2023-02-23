@@ -46,8 +46,8 @@ jobs:
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('**/global.json', '**/*.csproj') }}
-      - name: Run './build.cmd RunTests CreateNuGet'
-        run: ./build.cmd RunTests CreateNuGet
+      - name: Run './build.cmd BuildRelease RunTests NBench CreateNuGet'
+        run: ./build.cmd BuildRelease RunTests NBench CreateNuGet
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   ubuntu-latest:
@@ -69,7 +69,7 @@ jobs:
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('**/global.json', '**/*.csproj') }}
-      - name: Run './build.cmd RunTests CreateNuGet'
-        run: ./build.cmd RunTests CreateNuGet
+      - name: Run './build.cmd BuildRelease RunTests NBench CreateNuGet'
+        run: ./build.cmd BuildRelease RunTests NBench CreateNuGet
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
