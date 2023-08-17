@@ -54,13 +54,17 @@ partial class Build : NukeBuild
     [Parameter] string SymbolsPublishUrl;
 
     //usage:
-    //.\build.cmd createnuget --NugetPrerelease {suffix}
+    //.\build.cmd CreateNuGet --NugetPrerelease {suffix}
     [Parameter] string NugetPrerelease;
 
     // Metadata used when signing packages and DLLs
     [Parameter] string SigningName = "My Library";
     [Parameter] string SigningDescription = "My REALLY COOL Library";
     [Parameter] string SigningUrl = "https://signing.is.cool/";
+
+    //usage:
+    //./build.cmd runtests --test-timeout 300s
+    [Parameter] string TestTimeout = "30m";
 
     [Parameter][Secret] string SignClientSecret;
     [Parameter][Secret] string SignClientUser;
@@ -81,7 +85,10 @@ partial class Build : NukeBuild
     GitHubActions GitHubActions => GitHubActions.Instance;
     private long BuildNumber()
     {
-        return GitHubActions.RunNumber;
+        if (GitHubActions != null!)
+            return GitHubActions.RunNumber;
+
+        return 0;
     }
     private string PreReleaseVersionSuffix()
     {
@@ -115,15 +122,15 @@ partial class Build : NukeBuild
                 .SetProjectFile(Solution));
         });
 
-    Target CreateNuget => _ => _
+    Target CreateNuGet => _ => _
       .Unlisted()
       .Description("Creates nuget packages")
       .DependsOn(Compile)
       .Executes(() =>
       {
-          var version = ReleaseNotes.Version.ToString();
+          var version = Version(ReleaseNotes, NugetPrerelease);
           var releaseNotes = GetNuGetReleaseNotes(ChangelogFile, GitRepository);
-
+          var versionSuffix = VersionSuffix;
           var projects = SourceDirectory.GlobFiles("**/*.csproj")
           .Except(SourceDirectory.GlobFiles("**/*Tests.csproj", "**/*Tests*.csproj"));
           foreach (var project in projects)
@@ -137,15 +144,15 @@ partial class Build : NukeBuild
                   .SetAssemblyVersion(version)
                   .SetFileVersion(version)
                   .SetVersionPrefix(version)
-                  .SetVersionSuffix(VersionSuffix)
+                  .SetVersionSuffix(versionSuffix)
                   .SetPackageReleaseNotes(releaseNotes)
                   .SetOutputDirectory(OutputNuget));
           }
       });
-    Target PublishNuget => _ => _
+    Target PublishNuGet => _ => _
     .Unlisted()
     .Description("Publishes .nuget packages to Nuget")
-    .After(CreateNuget, SignClient)
+    .After(CreateNuGet, SignClient)
     .OnlyWhenDynamic(() => !NugetPublishUrl.IsNullOrEmpty())
     .OnlyWhenDynamic(() => !NugetKey.IsNullOrEmpty())
     .Executes(async () =>
@@ -252,6 +259,9 @@ partial class Build : NukeBuild
                            .SetResultsDirectory(OutputTests)
                            .SetProcessWorkingDirectory(Directory.GetParent(project).FullName)
                            .SetLoggers("trx")
+                           .SetBlameCrash(true)
+                           .SetBlameHang(true)
+                           .SetBlameHangTimeout(TestTimeout)
                            .SetVerbosity(verbosity: DotNetVerbosity.Normal)
                            .EnableNoBuild());
                 }
@@ -259,8 +269,8 @@ partial class Build : NukeBuild
         });
     Target SignClient => _ => _
         .Unlisted()
-        .After(CreateNuget)
-        .Before(PublishNuget)
+        .After(CreateNuGet)
+        .Before(PublishNuGet)
         .OnlyWhenDynamic(() => !SignClientSecret.IsNullOrEmpty() && !SignClientUser.IsNullOrEmpty())
         //.OnlyWhenDynamic(() => !SignClientUser.IsNullOrEmpty())
         .Executes(() =>
@@ -285,7 +295,7 @@ partial class Build : NukeBuild
             }
         });
     Target Nuget => _ => _
-        .DependsOn(CreateNuget, SignClient, PublishNuget);
+        .DependsOn(CreateNuGet, SignClient, PublishNuGet);
     
     Target All => _ => _
      .Description("Executes NBench, Tests and Nuget targets/commands")
@@ -361,5 +371,11 @@ partial class Build : NukeBuild
     static void Information(string info)
     {
         Serilog.Log.Information(info);
+    }
+    static string Version(ReleaseNotes releaseNotes, string nugetPrerelease)
+    {
+        var version = releaseNotes.Version.ToString();
+        version = nugetPrerelease == "dev" ? version.Split('-')[0] : version;
+        return version;
     }
 }
