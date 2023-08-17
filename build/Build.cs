@@ -234,9 +234,9 @@ partial class Build : NukeBuild
             {
                 // if you need to filter tests by environment, do it here.
                 if (EnvironmentInfo.IsWin)
-                    return Solution.GetProjects("*.Tests");
+                    return Solution.GetAllProjects("*.Tests");
                 else
-                    return Solution.GetProjects("*.Tests");
+                    return Solution.GetAllProjects("*.Tests");
             }
             var projects = GetProjects();
             foreach (var project in projects)
